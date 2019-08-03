@@ -195,3 +195,9 @@ dmypy.json
 # ignore uncompressed (bzip2) raw data
 raw/*.csv
 raw/*.zip
+
+# uncompressed pickled data
+pickle/*.pkl
+
+# person scartch-work folder 
+scratch/
