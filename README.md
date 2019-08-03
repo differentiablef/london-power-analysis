@@ -28,6 +28,6 @@
 
  Various documents (including hand scraped proposed events to consider) which serve to direct or synthesize results, for various investigations.
 
-## Contributors
+## Contributors (past and present.)
  Me, Pragya Shakya, Alexis Summey, BADOU ARTHUR KOSSONOU, Sancta Marie P.Isimbi, Yongzhen Chen, Jerry Greenough, Godfrey Edokpia
 
