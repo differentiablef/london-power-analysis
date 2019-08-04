@@ -27,14 +27,6 @@ with os.scandir(raw_dir) as it:
             # remove extranious columns
             del df['acorn'], df['acorn-grouped'], df['pricing']
 
-            # generate useful 'date' and 'time' column
-            tmp = df['datetime'].apply(lambda x : x.split())
-            df['date'] = tmp.apply(lambda x : x[0])
-            df['time'] = tmp.apply(lambda x : x[1])
-
-            # remove redundent column
-            del df['datetime']
-
             # remove null entries
             rng = df['kWh'].apply(lambda x : x != 'Null')
             df = df.loc[rng]
@@ -42,12 +34,14 @@ with os.scandir(raw_dir) as it:
             # shorten id's
             df['id'] = df['id'].apply(lambda x : x[3:])
 
-            df['time'] = pd.to_timedelta( df['time'], unit='m' )
             # set column types
             df = df.astype({
                 'id': 'int16',
                 'kWh': 'float32',
-                'date': 'datetime64'})
+                'datetime': 'datetime64'})
+
+            # remove double entries
+            df = df.groupby(['id', 'datetime']).mean()
             
             # set column types
             # store file in a compressed pickle file
