@@ -199,5 +199,6 @@ raw/*.zip
 # uncompressed pickled data
 pickle/*.pkl
 
-# person scartch-work folder 
+# person scartch-work
+scratch
 scratch/
