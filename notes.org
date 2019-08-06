@@ -1,0 +1,183 @@
+#+TITLE: London Power Analysis Notes.
+
+* Observations
+** Distribution of kWh Readings (2013)
+To get a feel for the behavior of the sample paths, it's worth looking at the distribution of the values they take.
+
+*** Sample Population
+Their full range is, 
+
+#+BEGIN_SRC python
+values = set()
+for iid in data.columns:
+    values = values | set(data[iid].fillna(-1))
+#+END_SRC
+
+(replacing NaN with -1 makes them distinct from actual reading, while still groups them all together.) 
+
+The concentration of readings can be roughly plotted as follows
+
+#+BEGIN_SRC python
+plt.figure(figsize=(6,3))
+plt.hist(sorted(values), bins=200)
+plt.xlabel('Reading Value (binned)')
+plt.ylabel('Frequency')
+plt.title('Histogram: Readings')
+plt.tight_layout()
+plt.savefig('./images/concentration-values-2013.png')
+#+END_SRC
+
+#+CAPTION: "Concentration of kWh Values"
+[[./images/concentration-values-2013.png]]
+
+*** Number of Distinct Readings
+**** Per Sample Path
+Looking at the number of distinct readings which occur for each sample path, we proceed by executing
+
+#+BEGIN_SRC python
+# calculate number of unique values which occur in each sample path
+counts_path = data.apply(lambda x : x.nunique())
+
+# generate histogram plot
+plt.figure(figsize=(6,3))
+plt.hist(counts_path, bins=70)
+plt.xlabel('Num. Of Distinct Values')
+plt.ylabel('Frequency')
+plt.title('Dist. of Distinct Values (paths)')
+plt.tight_layout()
+plt.savefig('./images/dist-values-path-2013.png')
+#+END_SRC 
+
+which yields the following,
+
+#+CAPTION: "Dist. of Reading Counts"
+[[./images/dist-values-path-2013.png]]`
+
+**** Per Time Interval
+Next, the number of distinct readings per time interval,
+
+#+BEGIN_SRC python
+# calculate number of unique values which occur
+counts_time = data.apply(lambda x : x.nunique(), axis=1)
+
+# generate histogram plot
+plt.figure(figsize=(6,3))
+plt.hist(counts_time, bins=70)
+plt.xlabel('Num. Of Distinct Values')
+plt.ylabel('Frequency')
+plt.title('Dist. of Distinct Values (time)')
+plt.tight_layout()
+plt.savefig('./images/dist-values-time-2013.png')
+#+END_SRC
+
+#+CAPTIOM: "Dist. Distinct Readings"
+[[./images/dist-values-time-2013.png]]
+
+*** Distribution of Readings
+**** The Entire Sample
+Combining all the different sample paths, we can compute the distribution of readings for the entire sample. 
+
+#+begin_src python
+# combine all readings into one series
+sample = pd.Series(data.values.flatten())
+
+# compute frequency of each reading
+freqs = sample.value_counts().sort_index()
+#+end_src
+
+...
+**** Conditioned on Time
+To extract the distribution of values for each day/time, we do the following
+
+#+begin_src python
+# compute frequencies of reading values for each time index
+hist = data.apply( lambda x : x.value_counts(), axis=1 ) 
+#+end_src
+
+Then, combine the results by binning the values into 300 equally sized buckets using =pd.qcut=. Since there are =6735= district values in the full population, binning the readings in this way, produces intervals in which roughly 22 values can occur.
+
+#+begin_src python
+# tranpose so that values are the index
+hist = hist.transpose()
+
+# bin values into 300 equally sized buckets
+hist.index = pd.qcut( hist.index, 300 )
+
+# combine frequencies
+hist = hist.groupby(hist.index).sum()
+
+# replace intervals in the index with their midpoints
+hist.index = hist.index.map(lambda x: x.mid)
+#+end_src
+
+Finally to get a feel for how the distributions change with time, lets produce a density plot for a couple of days and restricted range of values. We do this as follows,
+
+#+begin_src python
+# select distributions for the first two weeks if March 
+#   and only for readings less than 2.0.
+
+# since the index is categorical, we need to find the category 
+#  corresponding to "just before 2.0"
+cpoint = max([val \
+    for val in hist.index.values \
+        if val < 2.0]) 
+
+# then extract the appropriately restricted region,
+region = hist.loc[hist.index < cpoint, '2013-03-01':'2013-03-15']
+
+# plot the resulting density
+plt.figure(figsize=(13, 4))
+plt.pcolormesh(region.columns, region.index.values, region )
+plt.colorbar()
+plt.tight_layout()
+plt.savefig('./images/dist-readings-by-time-2013.png')
+#+end_src
+
+which yields,
+
+#+CAPTION: "Density Plot of Reading Distribution"
+[[./images/dist-readings-by-time-2013.png]]
+
+
+** MAC004863 - Strong periodic signal.
+#+CAPTION: "Interesting usage profile"
+[[./images/MAC004863-sample.png]]
+
+Possibly a broken appliance? Almost every night at exactly mid-night something kicks on and runs until day break.
+
+** Total Consumption (2013)
+For the year of 2013, the total power usage for a household seems strongly related to that unique household (modulo some outliers.) 
+
+Computing the total consumption goes as follows,
+
+#+begin_src python
+# load complete data for 2013.
+#   (in this file, the time-series for each household is given it's own column.)
+data = pd.read_pickle('./pickle/2013-pivot.pkl')
+
+# setup a place to store the results
+total = pd.DataFrame(index=data.columns)
+for iid in data.columns: 
+    # compute total consumptions
+    total[iid] = data.loc[:,iid].fillna(0.0).sum()
+#+end_src
+
+(in this case, filling NaN with 0.0, is the same as dropping them.)
+
+As an indication of how strongly connected total consumption is with the household it came from, lets look at the sample size and the number of distinct values for total consumption. In particular the following,
+
+#+begin_src python
+sample_size = len(total.index); num_values = len(total.unique())
+print(f'Samples:           {sample_size}\n'
+      f'Unique Values:     {num_values}\n'
+      f'Pct. Diff:         {(sample_size - num_values)/sample_size:.02%}')
+#+end_src
+
+produces
+
+#+begin_src
+Samples:           4411
+Unique Values:     4251
+Pct. Diff:         3.63%
+#+end_src
+
