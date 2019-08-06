@@ -9,8 +9,6 @@ import numpy as np
 
 dt = pd.Timedelta(30, unit='m')
 
-# ##############################################################################
-
 # load the data for 2013
 data = pd.read_pickle('./pickle/2013-pivot.pkl').round(6)
 
@@ -25,7 +23,7 @@ for samp_id in data.columns:
     # initialize transition dict
     trans=dict()
 
-    # compute transition  frequencies for each state
+    # compute transition frequencies for each state
     for state in states:
         # initialize state's entry in transition matrix
         trans[state] = dict()
