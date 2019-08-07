@@ -197,8 +197,8 @@ raw/*.csv
 raw/*.zip
 
 # uncompressed pickled data
-pickle/*.pkl
+*.pkl
 
-# person scartch-work
+# personal scartch-work
 scratch
 scratch/
