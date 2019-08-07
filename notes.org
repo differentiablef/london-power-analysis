@@ -1,4 +1,4 @@
-#+TITLE: London Power Analysis Notes.
+#+TITLE: Notes
 
 * Observations
 ** Distribution of kWh Readings (2013)
@@ -30,68 +30,138 @@ plt.savefig('./images/concentration-values-2013.png')
 #+CAPTION: "Concentration of kWh Values"
 [[./images/concentration-values-2013.png]]
 
-*** Number of Distinct Readings
-**** Per Sample Path
-Looking at the number of distinct readings which occur for each sample path, we proceed by executing
-
-#+BEGIN_SRC python
-# calculate number of unique values which occur in each sample path
-counts_path = data.apply(lambda x : x.nunique())
-
-# generate histogram plot
-plt.figure(figsize=(6,3))
-plt.hist(counts_path, bins=70)
-plt.xlabel('Num. Of Distinct Values')
-plt.ylabel('Frequency')
-plt.title('Dist. of Distinct Values (paths)')
-plt.tight_layout()
-plt.savefig('./images/dist-values-path-2013.png')
-#+END_SRC 
-
-which yields the following,
-
-#+CAPTION: "Dist. of Reading Counts"
-[[./images/dist-values-path-2013.png]]`
-
-**** Per Time Interval
-Next, the number of distinct readings per time interval,
-
-#+BEGIN_SRC python
-# calculate number of unique values which occur
-counts_time = data.apply(lambda x : x.nunique(), axis=1)
-
-# generate histogram plot
-plt.figure(figsize=(6,3))
-plt.hist(counts_time, bins=70)
-plt.xlabel('Num. Of Distinct Values')
-plt.ylabel('Frequency')
-plt.title('Dist. of Distinct Values (time)')
-plt.tight_layout()
-plt.savefig('./images/dist-values-time-2013.png')
-#+END_SRC
-
-#+CAPTIOM: "Dist. Distinct Readings"
-[[./images/dist-values-time-2013.png]]
-
 *** Distribution of Readings
 **** The Entire Sample
 Combining all the different sample paths, we can compute the distribution of readings for the entire sample. 
 
 #+begin_src python
 # combine all readings into one series
-sample = pd.Series(data.values.flatten())
+sample = pd.Series(data.values.flatten()).fillna(-1)
 
 # compute frequency of each reading
 freqs = sample.value_counts().sort_index()
 #+end_src
 
-...
+Now that we've got the frequencies computed, let's check for outliers. Printing the top 5 values sorted by frequency, 
+
+#+begin_src python
+# display the top-10 most frequent values.
+print(freqs.sort_values(ascending=False).head(5)) 
+#+end_src
+
+we get the following,
+
+#+begin_src
+-1.000    3135940
+ 0.000     939581
+ 0.054     398987
+ 0.055     398709
+ 0.056     398284
+dtype: int64
+#+end_src
+
+Which suggests that both NaN's and zero readings might be an issue. To see if we can possibly restrict to a sub-sample, we need to look at just how frequently they occur among our sample paths,
+
+#+begin_src python
+# fill NaN with distinct value
+paths = data.fillna(-1)
+
+# count NaN/Zero occurances per sample path.
+nan_counts = (paths == -1).apply(pd.Series.value_counts).fillna(0)
+zero_counts = (paths == 0).apply(pd.Series.value_counts).fillna(0) 
+
+# get relative frequency of NaN/Zero values for each sample path.
+freq_bad = (nan_counts.loc[True,:]+zero_counts.loc[True,:])/(paths.shape[0])
+
+# compute cumulative distribution function of NaN/Zero count
+cdf = lambda pct : freq_bad.loc[freq_bad < pct].shape[0]/paths.shape[1]
+
+# calculate and plot results
+prop_bad_vals = np.linspace(0,1,50)
+prop_paths = [ cdf( pct ) for pct in prop_bad_vals ]
+#+end_src
+
+After playing around for a bit, we obtain
+
+#+begin_src python
+# generic plot stuff
+label=('|$S$|$\cdot y = '
+       '$|$\{ f\in S: $|$\{ n\in T: '
+       'f_n \in \{NaN,0.0\}\}$|$ < $|$T$|$\cdot x \}$|')
+
+plt.xlabel("Proportion of {NaN, 0.0} Values ($x$)"); plt.xlim(0,1)
+plt.ylabel("Proportion of Paths ($y$)"); plt.ylim(0,1)
+plt.legend(loc='lower right'); plt.grid(True)
+
+# select cut off proportion
+cut_off = 0.1
+
+# plot cdf and values
+plt.hlines( [cdf(cut_off) ], 0, 1, alpha=0.5, color='black', linestyle='-',  
+            label=f'$y={cdf(cut_off):.02}$')
+plt.vlines( [cut_off], 0, 1, alpha=0.55, color='blue', 
+            label=f'$x={cut_off:.02}$')
+
+plt.plot( prop_bad_vals, prop_paths, label=label, color='orange')
+
+# save plot
+plt.savefig('./images/nan-zero-values-2013.png')
+#+end_src
+
+produces, 
+
+#+CAPTION: "NaN, Zero Proportions"
+[[./images/nan-zero-values-2013.png]]
+
+Making it clear that excluding those paths with more than 10.0% of their values either =NaN= or 0.0, retains approximately 90.0% of the sample. Moreover, restricting to this subset allows us to freely ignore 'NaN' values while still retaining a portion of zeros. Doing this and recalculating the frequencies for this new sample, 
+
+#+begin_src python
+
+# consider only those paths which are below our threshold of 0.1
+valid = freq_bad.loc[freq_bad < 0.1].index
+
+# form the collection of valid paths and the grouped 
+#   sample they produce.
+paths = data.loc[:, valid]
+sample = pd.Series(paths.values.flatten()).dropna()
+
+# compute frequency of each reading
+freqs = sample.value_counts().sort_index()/len(sample)
+
+# calculate mu and sigma
+mu = sample.mean(); sigma = sample.std();
+
+# plot the frequencies vs. readings
+plt.figure(figsize=(12,5))
+plt.plot(freqs)
+plt.xlim(0, 3); plt.xlabel('kWh Reading');
+plt.ylim(0, 1.1*max(freqs)); plt.ylabel('Rel. Freq.')
+
+# show lines corresponding to  mu + k*sigma for k=0, .., 4
+plt.vlines([mu], 0, 1.1*max(freqs), label='$\mu$', color='lightblue')
+for k in range(1, 5):
+    plt.vlines([mu+k * sigma], 0, 1.1*max(freqs), 
+               label=f'$\mu+{k}\sigma$', 
+               color='green', alpha=(1/k**2)*0.75, linestyle='--')
+
+plt.legend() # show legend
+
+# save plot
+plt.savefig('./images/dist-readings-2013.png')
+#+end_src
+
+we obtain the following distribution,
+
+#+CAPTION: "Distribution of kWh Readings"
+[[./images/dist-readings-2013.png]]
+
 **** Conditioned on Time
+
 To extract the distribution of values for each day/time, we do the following
 
 #+begin_src python
-# compute frequencies of reading values for each time index
-hist = data.apply( lambda x : x.value_counts(), axis=1 ) 
+# compute frequencies of values for each time index using thresholded sample
+hist = paths.apply( lambda x : x.value_counts(), axis=1 )
 #+end_src
 
 Then, combine the results by binning the values into 300 equally sized buckets using =pd.qcut=. Since there are =6735= district values in the full population, binning the readings in this way, produces intervals in which roughly 22 values can occur.
@@ -138,6 +208,51 @@ which yields,
 #+CAPTION: "Density Plot of Reading Distribution"
 [[./images/dist-readings-by-time-2013.png]]
 
+Moreover we can clearly see the day/night cycle (as expected.)
+
+*** Number of Distinct Readings
+**** Per Sample Path
+Looking at the number of distinct readings which occur for each sample path, we proceed by executing
+
+#+BEGIN_SRC python
+# calculate number of unique values which occur in each sample path
+counts_path = data.apply(lambda x : x.nunique())
+
+# generate histogram plot
+plt.figure(figsize=(6,3))
+plt.hist(counts_path, bins=70)
+plt.xlabel('Num. Of Distinct Values')
+plt.ylabel('Frequency')
+plt.title('Dist. of Distinct Values (paths)')
+plt.tight_layout()
+plt.savefig('./images/dist-values-path-2013.png')
+#+END_SRC 
+
+which yields the following,
+
+#+CAPTION: "Dist. of Reading Counts"
+[[./images/dist-values-path-2013.png]]`
+
+**** Per Time Interval
+Next, the number of distinct readings per time interval,
+
+#+BEGIN_SRC python
+# calculate number of unique values which occur
+counts_time = data.apply(lambda x : x.nunique(), axis=1)
+
+# generate histogram plot
+plt.figure(figsize=(6,3))
+plt.hist(counts_time, bins=70)
+plt.xlabel('Num. Of Distinct Values')
+plt.ylabel('Frequency')
+plt.title('Dist. of Distinct Values (time)')
+plt.tight_layout()
+plt.savefig('./images/dist-values-time-2013.png')
+#+END_SRC
+
+#+CAPTIOM: "Dist. Distinct Readings"
+[[./images/dist-values-time-2013.png]]
+
 
 ** MAC004863 - Strong periodic signal.
 #+CAPTION: "Interesting usage profile"
@@ -180,4 +295,5 @@ Samples:           4411
 Unique Values:     4251
 Pct. Diff:         3.63%
 #+end_src
+
 
