@@ -8,9 +8,11 @@ To get a feel for the behavior of the sample paths, it's worth looking at the di
 Their full range is, 
 
 #+BEGIN_SRC python
-values = set()
-for iid in data.columns:
-    values = values | set(data[iid].fillna(-1))
+
+  values = set()
+  for iid in data.columns:
+      values = values | set(data[iid].fillna(-1))
+    
 #+END_SRC
 
 (replacing NaN with -1 makes them distinct from actual reading, while still groups them all together.) 
@@ -18,13 +20,15 @@ for iid in data.columns:
 The concentration of readings can be roughly plotted as follows
 
 #+BEGIN_SRC python
-plt.figure(figsize=(6,3))
-plt.hist(sorted(values), bins=200)
-plt.xlabel('Reading Value (binned)')
-plt.ylabel('Frequency')
-plt.title('Histogram: Readings')
-plt.tight_layout()
-plt.savefig('./images/concentration-values-2013.png')
+
+  plt.figure(figsize=(6,3))
+  plt.hist(sorted(values), bins=200)
+  plt.xlabel('Reading Value (binned)')
+  plt.ylabel('Frequency')
+  plt.title('Histogram: Readings')
+  plt.tight_layout()
+  plt.savefig('./images/concentration-values-2013.png')
+
 #+END_SRC
 
 #+CAPTION: "Concentration of kWh Values"
@@ -35,77 +39,86 @@ plt.savefig('./images/concentration-values-2013.png')
 Combining all the different sample paths, we can compute the distribution of readings for the entire sample. 
 
 #+begin_src python
-# combine all readings into one series
-sample = pd.Series(data.values.flatten()).fillna(-1)
 
-# compute frequency of each reading
-freqs = sample.value_counts().sort_index()
+  # combine all readings into one series
+  sample = pd.Series(data.values.flatten()).fillna(-1)
+
+  # compute frequency of each reading
+  freqs = sample.value_counts().sort_index()
+
 #+end_src
 
 Now that we've got the frequencies computed, let's check for outliers. Printing the top 5 values sorted by frequency, 
 
 #+begin_src python
-# display the top-10 most frequent values.
-print(freqs.sort_values(ascending=False).head(5)) 
+
+  # display the top-10 most frequent values.
+  print(freqs.sort_values(ascending=False).head(5)) 
+
 #+end_src
 
 we get the following,
 
 #+begin_src
--1.000    3135940
- 0.000     939581
- 0.054     398987
- 0.055     398709
- 0.056     398284
-dtype: int64
+ -1.000    3135940
+  0.000     939581
+  0.054     398987
+  0.055     398709
+  0.056     398284
+ dtype: int64
 #+end_src
 
 Which suggests that both NaN's and zero readings might be an issue. To see if we can possibly restrict to a sub-sample, we need to look at just how frequently they occur among our sample paths,
 
 #+begin_src python
-# fill NaN with distinct value
-paths = data.fillna(-1)
 
-# count NaN/Zero occurances per sample path.
-nan_counts = (paths == -1).apply(pd.Series.value_counts).fillna(0)
-zero_counts = (paths == 0).apply(pd.Series.value_counts).fillna(0) 
+  # fill NaN with distinct value
+  paths = data.fillna(-1)
 
-# get relative frequency of NaN/Zero values for each sample path.
-freq_bad = (nan_counts.loc[True,:]+zero_counts.loc[True,:])/(paths.shape[0])
+  # count NaN/Zero occurances per sample path.
+  nan_counts = (paths == -1).apply(pd.Series.value_counts).fillna(0)
+  zero_counts = (paths == 0).apply(pd.Series.value_counts).fillna(0) 
 
-# compute cumulative distribution function of NaN/Zero count
-cdf = lambda pct : freq_bad.loc[freq_bad < pct].shape[0]/paths.shape[1]
+  # get relative frequency of NaN/Zero values for each sample path.
+  freq_bad = (nan_counts.loc[True,:]+zero_counts.loc[True,:])/(paths.shape[0])
 
-# calculate and plot results
-prop_bad_vals = np.linspace(0,1,50)
-prop_paths = [ cdf( pct ) for pct in prop_bad_vals ]
+  # compute cumulative distribution function of NaN/Zero count
+  cdf = lambda pct : freq_bad.loc[freq_bad < pct].shape[0]/paths.shape[1]
+
+  # calculate and plot results
+  prop_bad_vals = np.linspace(0,1,50)
+  prop_paths = [ cdf( pct ) for pct in prop_bad_vals ]
+
 #+end_src
 
 After playing around for a bit, we obtain
 
 #+begin_src python
-# generic plot stuff
-label=('|$S$|$\cdot y = '
-       '$|$\{ f\in S: $|$\{ n\in T: '
-       'f_n \in \{NaN,0.0\}\}$|$ < $|$T$|$\cdot x \}$|')
 
-plt.xlabel("Proportion of {NaN, 0.0} Values ($x$)"); plt.xlim(0,1)
-plt.ylabel("Proportion of Paths ($y$)"); plt.ylim(0,1)
-plt.legend(loc='lower right'); plt.grid(True)
+  # generic plot stuff
+  label=('|$S$|$\cdot y = '
+         '$|$\{ f\in S: $|$\{ n\in T: '
+         'f_n \in \{NaN,0.0\}\}$|$ < $|$T$|$\cdot x \}$|')
 
-# select cut off proportion
-cut_off = 0.1
+  plt.xlabel("Proportion of {NaN, 0.0} Values ($x$)"); plt.xlim(0,1)
+  plt.ylabel("Proportion of Paths ($y$)"); plt.ylim(0,1)
+  plt.legend(loc='lower right'); plt.grid(True)
 
-# plot cdf and values
-plt.hlines( [cdf(cut_off) ], 0, 1, alpha=0.5, color='black', linestyle='-',  
-            label=f'$y={cdf(cut_off):.02}$')
-plt.vlines( [cut_off], 0, 1, alpha=0.55, color='blue', 
-            label=f'$x={cut_off:.02}$')
+  # select cut off proportion
+  cut_off = 0.1
 
-plt.plot( prop_bad_vals, prop_paths, label=label, color='orange')
+  # plot cdf and values
+  plt.hlines( [cdf(cut_off) ], 0, 1, alpha=0.5, color='black', linestyle='-',  
+              label=f'$y={cdf(cut_off):.02}$')
 
-# save plot
-plt.savefig('./images/nan-zero-values-2013.png')
+  plt.vlines( [cut_off], 0, 1, alpha=0.55, color='blue', 
+              label=f'$x={cut_off:.02}$')
+
+  plt.plot( prop_bad_vals, prop_paths, label=label, color='orange')
+
+  # save plot
+  plt.savefig('./images/nan-zero-values-2013.png')
+
 #+end_src
 
 produces, 
@@ -117,37 +130,38 @@ Making it clear that excluding those paths with more than 10.0% of their values 
 
 #+begin_src python
 
-# consider only those paths which are below our threshold of 0.1
-valid = freq_bad.loc[freq_bad < 0.1].index
+  # consider only those paths which are below our threshold of 0.1
+  valid = freq_bad.loc[freq_bad < 0.1].index
 
-# form the collection of valid paths and the grouped 
-#   sample they produce.
-paths = data.loc[:, valid]
-sample = pd.Series(paths.values.flatten()).dropna()
+  # form the collection of valid paths and the grouped 
+  #   sample they produce.
+  paths = data.loc[:, valid]
+  sample = pd.Series(paths.values.flatten()).dropna()
 
-# compute frequency of each reading
-freqs = sample.value_counts().sort_index()/len(sample)
+  # compute frequency of each reading
+  freqs = sample.value_counts().sort_index()/len(sample)
 
-# calculate mu and sigma
-mu = sample.mean(); sigma = sample.std();
+  # calculate mu and sigma
+  mu = sample.mean(); sigma = sample.std();
 
-# plot the frequencies vs. readings
-plt.figure(figsize=(12,5))
-plt.plot(freqs)
-plt.xlim(0, 3); plt.xlabel('kWh Reading');
-plt.ylim(0, 1.1*max(freqs)); plt.ylabel('Rel. Freq.')
+  # plot the frequencies vs. readings
+  plt.figure(figsize=(12,5))
+  plt.plot(freqs)
+  plt.xlim(0, 3); plt.xlabel('kWh Reading');
+  plt.ylim(0, 1.1*max(freqs)); plt.ylabel('Rel. Freq.')
 
-# show lines corresponding to  mu + k*sigma for k=0, .., 4
-plt.vlines([mu], 0, 1.1*max(freqs), label='$\mu$', color='lightblue')
-for k in range(1, 5):
-    plt.vlines([mu+k * sigma], 0, 1.1*max(freqs), 
-               label=f'$\mu+{k}\sigma$', 
-               color='green', alpha=(1/k**2)*0.75, linestyle='--')
+  # show lines corresponding to  mu + k*sigma for k=0, .., 4
+  plt.vlines([mu], 0, 1.1*max(freqs), label='$\mu$', color='lightblue')
+  for k in range(1, 5):
+      plt.vlines([mu+k * sigma], 0, 1.1*max(freqs), 
+                 label=f'$\mu+{k}\sigma$', 
+                 color='green', alpha=(1/k**2)*0.75, linestyle='--')
 
-plt.legend() # show legend
+  plt.legend() # show legend
 
-# save plot
-plt.savefig('./images/dist-readings-2013.png')
+  # save plot
+  plt.savefig('./images/dist-readings-2013.png')
+
 #+end_src
 
 we obtain the following distribution,
@@ -160,47 +174,53 @@ we obtain the following distribution,
 To extract the distribution of values for each day/time, we do the following
 
 #+begin_src python
-# compute frequencies of values for each time index using thresholded sample
-hist = paths.apply( lambda x : x.value_counts(), axis=1 )
+
+  # compute frequencies of values for each time index using thresholded sample
+  hist = paths.apply( lambda x : x.value_counts(), axis=1 )
+
 #+end_src
 
 Then, combine the results by binning the values into 300 equally sized buckets using =pd.qcut=. Since there are =6735= district values in the full population, binning the readings in this way, produces intervals in which roughly 22 values can occur.
 
 #+begin_src python
-# tranpose so that values are the index
-hist = hist.transpose()
 
-# bin values into 300 equally sized buckets
-hist.index = pd.qcut( hist.index, 300 )
+  # tranpose so that values are the index
+  hist = hist.transpose()
 
-# combine frequencies
-hist = hist.groupby(hist.index).sum()
+  # bin values into 300 equally sized buckets
+  hist.index = pd.qcut( hist.index, 300 )
 
-# replace intervals in the index with their midpoints
-hist.index = hist.index.map(lambda x: x.mid)
+  # combine frequencies
+  hist = hist.groupby(hist.index).sum()
+
+  # replace intervals in the index with their midpoints
+  hist.index = hist.index.map(lambda x: x.mid)
+
 #+end_src
 
 Finally to get a feel for how the distributions change with time, lets produce a density plot for a couple of days and restricted range of values. We do this as follows,
 
 #+begin_src python
-# select distributions for the first two weeks if March 
-#   and only for readings less than 2.0.
 
-# since the index is categorical, we need to find the category 
-#  corresponding to "just before 2.0"
-cpoint = max([val \
-    for val in hist.index.values \
-        if val < 2.0]) 
+  # select distributions for the first two weeks if March 
+  #   and only for readings less than 2.0.
 
-# then extract the appropriately restricted region,
-region = hist.loc[hist.index < cpoint, '2013-03-01':'2013-03-15']
+  # since the index is categorical, we need to find the category 
+  #  corresponding to "just before 2.0"
+  cpoint = max([val \
+      for val in hist.index.values \
+          if val < 2.0]) 
 
-# plot the resulting density
-plt.figure(figsize=(13, 4))
-plt.pcolormesh(region.columns, region.index.values, region )
-plt.colorbar()
-plt.tight_layout()
-plt.savefig('./images/dist-readings-by-time-2013.png')
+  # then extract the appropriately restricted region,
+  region = hist.loc[hist.index < cpoint, '2013-03-01':'2013-03-15']
+
+  # plot the resulting density
+  plt.figure(figsize=(13, 4))
+  plt.pcolormesh(region.columns, region.index.values, region )
+  plt.colorbar()
+  plt.tight_layout()
+  plt.savefig('./images/dist-readings-by-time-2013.png')
+
 #+end_src
 
 which yields,
