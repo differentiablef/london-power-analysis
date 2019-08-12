@@ -92,13 +92,11 @@ class UpdateDist(object):
 
         
         offsets = np.zeros((len(self.density.index), 2))
-        for ii, val in enumerate(self.density.index):
-            if val in locald.index.values:
-                offsets[ii,:] = [val, locald[val]]
-            else:
-                offsets[ii,:] = [val, 0.0]
-            pass
-
+        pos = list(self.density.index)
+        for val in locald.index:
+            ii = pos.index(val)
+            offsets[ii,:] = [val, locald[val]]
+            
         segments = np.array(
             [[ [mu_0, self.ymin], [mu_0, self.ymax ] ],
              [ [mu_0 + sigma_0, self.ymin], [mu_0+sigma_0, self.ymax] ],
@@ -124,15 +122,15 @@ class UpdateDist(object):
 if __name__=='__main__':
     global data
     # load data.
-    data = pd.read_pickle('./pickle/2013-01.pkl')
+    data = pd.read_pickle('./pickle/2013-12.pkl')
     # restrict to relevant value region and apply np.log
     tmp = data.stack()
-    tmp = np.log(tmp[(2 > tmp)&(tmp > 0.01)])
+    tmp = np.log(tmp[(6 > tmp)&(tmp > 0.001)])
     data = tmp.unstack(0)
     
     fig, ax = plt.subplots()
-    uu = UpdateDist(ax, start='2013-01-01', end='2013-01-28', delta='0.5H')
+    uu = UpdateDist(ax, start='2013-12-01', end='2013-12-31', delta='0.5H')
     anim = FuncAnimation(fig, uu,
-                         frames=np.arange(289),
+                         frames=np.arange(1441),
                          init_func=uu.init, interval=200, blit=True)
     plt.show()
