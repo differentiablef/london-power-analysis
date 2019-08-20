@@ -6,7 +6,7 @@
 Setup the dependencies for the remaining source blocks in this note.
 
 #+name: initialize-env
-#+begin_src ipython :session notes :exports both :results silent
+#+begin_src python :session notes :exports both :results silent
 
   %matplotlib inline
   import os, sys
@@ -24,7 +24,7 @@ Setup the dependencies for the remaining source blocks in this note.
 and load the data currently of interest,
 
 #+name: load-data
-#+begin_src ipython :session notes :exports both :results silent
+#+begin_src python :session notes :exports both :results silent
 
   data = pd.read_pickle('./pickle/2013-pivot.pkl')
 
@@ -39,7 +39,7 @@ To get a feel for the behavior of the sample paths, it's worth looking at the di
 *** Sample Population
 Their full range is, 
 
-#+BEGIN_SRC ipython :session "notes" :results silent
+#+BEGIN_SRC python :session "notes" :results silent
 
   values = set()
   for iid in data.columns:
@@ -51,7 +51,7 @@ Their full range is,
 
 The concentration of readings can be roughly plotted as follows
 
-#+BEGIN_SRC ipython :session "notes" :results silent
+#+BEGIN_SRC python :session "notes" :results silent
 
   plt.figure(figsize=(6,3))
   plt.hist(sorted(values), bins=200)
@@ -70,7 +70,7 @@ The concentration of readings can be roughly plotted as follows
 **** The Entire Sample
 Combining all the different sample paths, we can compute the distribution of readings for the entire sample. 
 
-#+begin_src ipython :session notes :results silent :exports both
+#+begin_src python :session notes :results silent :exports both
 
   # combine all readings into one series
   sample = pd.Series(data.values.flatten()).fillna(-1)
@@ -83,7 +83,7 @@ Combining all the different sample paths, we can compute the distribution of rea
 
 Now that we've got the frequencies computed, let's check for outliers. Printing the top 5 values sorted by frequency, 
 
-#+begin_src ipython :session notes :results silent :exports both
+#+begin_src python :session notes :results silent :exports both
 
   # display the top-10 most frequent values.
   print(freqs.sort_values(ascending=False).head(5))
@@ -104,7 +104,7 @@ we get the following,
 Which suggests that both NaN's and zero readings might be an issue. To see if we can possibly restrict to a sub-sample, we need to look at just how frequently they occur among our sample paths,
 
 #+name: calculate-path-scores
-#+begin_src ipython :session notes :results silent :exports both
+#+begin_src python :session notes :results silent :exports both
 
   # fill NaN with distinct value
   pathsamp = data.fillna(-1)
@@ -130,7 +130,7 @@ Which suggests that both NaN's and zero readings might be an issue. To see if we
 
 After playing around for a bit, we obtain
 
-#+begin_src ipython :session notes :results silent :exports both
+#+begin_src python :session notes :results silent :exports both
 
   # generic plot stuff
   plt.figure(figsize=(6,4.5))
@@ -164,7 +164,7 @@ produces,
 Making it clear that excluding those paths with more than 10.0% of their values either =NaN= or =0.0=, retains approximately 90.0% of the sample. Moreover, restricting to this subset allows us to freely ignore 'NaN' values while still retaining a portion of zeros. Doing this and recalculating the frequencies for this new sample, 
 
 #+name: extract-valid-paths
-#+begin_src ipython :session notes :results silent :exports both 
+#+begin_src python :session notes :results silent :exports both 
 
   # consider only those paths which are below our threshold of 0.1
   valid = freq_bad.loc[freq_bad < 0.1].index
@@ -188,7 +188,7 @@ Making it clear that excluding those paths with more than 10.0% of their values 
 
 we can then produce a plot of the observed distribution,
 
-#+begin_src ipython :session notes :results silent :exports both
+#+begin_src python :session notes :results silent :exports both
   # plot the frequencies vs. readings
   plt.figure(figsize=(12/1.5,5/1.5))
   plt.plot(freqs)
@@ -219,7 +219,7 @@ obtaining,
 To extract the distribution of values for each day/time, we do the following
 
 #+NAME: compute-path-hist
-#+begin_src ipython :session notes :results silent :exports both
+#+begin_src python :session notes :results silent :exports both
 
   # compute frequencies of values for each time index using thresholded sample
   hist = paths.apply( lambda x : x.value_counts(), axis=1 )
@@ -233,7 +233,7 @@ To extract the distribution of values for each day/time, we do the following
 Then, combine the results by binning the values into 350 equally sized buckets using =pd.qcut=. Since there are =6735= district values in the full population, binning the readings in this way, produces intervals in which roughly 20 values can occur.
 
 #+NAME: compute-date-dist
-#+begin_src ipython :session notes :results silent :exports both
+#+begin_src python :session notes :results silent :exports both
 
   # tranpose so that values are the index
   hist_dt = hist.transpose(); 
@@ -251,7 +251,7 @@ Then, combine the results by binning the values into 350 equally sized buckets u
 
 Finally to get a feel for how the distributions change with time, lets produce a density plot for a couple of days and restricted range of values. We do this as follows,
 
-#+begin_src ipython :session notes :results silent :exports both
+#+begin_src python :session notes :results silent :exports both
 
   # select distribution for the first two weeks if March 
   #   and only for readings less than 2.0 (2 > mu + 6 * sigma)
@@ -292,7 +292,7 @@ Moreover we can clearly see the day/night cycle (as expected) as well as a chang
 Assuming we've defined 'hist_dt' as above, we'll start with it. Proceeding as before, we'll aggregate frequencies which have the same label, only in this case the label will be the time of day,
 
 #+NAME: compute-time-dist
-#+begin_src ipython :session notes :results silent :exports both
+#+begin_src python :session notes :results silent :exports both
   # unit time tic is 30 minutes
   tic = pd.Timedelta(30, unit='m')
 
@@ -314,7 +314,7 @@ Assuming we've defined 'hist_dt' as above, we'll start with it. Proceeding as be
 
 Plotting the resulting density for the same slice of the sample population as before, 
 
-#+begin_src ipython :session notes :exports both :results silent
+#+begin_src python :session notes :exports both :results silent
 
     # plot the resulting density
     plt.figure(figsize=(6/2, 10/2))
@@ -326,7 +326,7 @@ Plotting the resulting density for the same slice of the sample population as be
   
     plt.colorbar(); 
     plt.title('kWh Density (given Time)',  {'fontsize': 'medium'})
-    plt.xlabel('time (s)')
+    plt.xlabel('time (m)')
     plt.tight_layout()
 
     plt.savefig('./images/dist-readings-only-time-2013.png')
@@ -339,7 +339,7 @@ we obtain,
 
 For a different perspective, we can plot the individual curves for some set of times,
 
-#+begin_src ipython :session notes :exports both :results silent
+#+begin_src python :session notes :exports both :results silent
   # plot the resulting density  plt.figure(figsize=(6/2, 10/2))
 
   nhist = hist_t/hist_t.sum()
@@ -407,7 +407,7 @@ For the year of 2013, the total power usage for a household seems strongly relat
 
 Computing the total consumption goes as follows,
 
-#+begin_src ipython :session notes :results silent :exports both
+#+begin_src python :session notes :results silent :exports both
 
   # load complete data for 2013.
   #   (in this file, the time-series for each household is given it's own column.)
