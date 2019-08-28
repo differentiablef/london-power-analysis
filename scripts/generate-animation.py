@@ -20,8 +20,7 @@ class UpdateDist(object):
     def __init__(self, ax, start='2013-05-25 00:00', end='2013-06-01 00:00', delta='0.5H'):
         global data
 
-        self.ymin = 0.0
-        self.ymax = 0.016
+
         
         # store instance specific variables
         self.axes = ax
@@ -41,31 +40,38 @@ class UpdateDist(object):
 
         sigma = tmp.std()
         mu = tmp.mean()
+        
         counts = tmp.value_counts().sort_index()
-        density = \
+        self.density = \
             counts/counts.sum()
 
+
+        self.ymin = 0.0
+        self.ymax = 2.0 * self.density.max()
+        
+        #self.bins = pd.qcut( tmp, 50, precision=10, retbins=True )[1]
+        
         del tmp
 
         # plot stuff
-        self.axes.set_xlim(max([mu-4*sigma, min(density.index)]),
-                           min([mu+4*sigma, max(density.index)]) )
+        self.axes.set_xlim(max([mu-4*sigma, min(self.density.index)]),
+                           min([mu+4*sigma, max(self.density.index)]) )
         
         self.axes.set_ylim(self.ymin, self.ymax)
         
-        self.stem1 = ax.scatter(density.index.values,
-                                density.values, s=0.5)
+        self.stem1 = ax.scatter(self.density.index.values,
+                                self.density.values, s=0.5)
         
-        self.stem = ax.scatter(density.index.values,
-                               density.values,
+        self.stem = ax.scatter(self.density.index.values,
+                               self.density.values,
                                label='local', s=0.7)
         
         self.legend = ax.legend()
         self.vlines = ax.vlines( [  ], self.ymin, self.ymax,
                                  alpha=0.5, linestyles='dashed',
-                                 colors=['gray', 'darkgray', 'darkgray' ])
+                                 colors=['green', 'darkgray', 'darkgray' ])
         
-        self.mu=mu; self.sigma=sigma; self.density=density;
+        self.mu=mu; self.sigma=sigma;
         pass
 
     def init(self):
@@ -79,37 +85,45 @@ class UpdateDist(object):
             return self.init()
 
         self.current=i
-        # cal density for surrounding date/time
-        region = pd.Series(
-            self.data.loc[
-                self.date_range[i], :].values.flatten())
         
+        # extract region for i'th date/time
+        region = pd.Series(
+            self.data.loc[self.date_range[i], :].values.flatten())
+
+        # compute \mu and \sigma for the region
         mu_0 = region.mean()
         sigma_0 = region.std()
-        
+
+        # compute rel. frequencies
         locald = region.value_counts()
         locald = locald/locald.sum()
 
-        
+        # initialize new offsets array with zeros
         offsets = np.zeros((len(self.density.index), 2))
+        
         pos = list(self.density.index)
         for val in locald.index:
             ii = pos.index(val)
             offsets[ii,:] = [val, locald[val]]
-            
+
+        # save new line information for \mu and \mu +/- \sigma segments
         segments = np.array(
             [[ [mu_0, self.ymin], [mu_0, self.ymax ] ],
              [ [mu_0 + sigma_0, self.ymin], [mu_0+sigma_0, self.ymax] ],
              [ [mu_0 - sigma_0, self.ymin], [mu_0-sigma_0, self.ymax] ]])
 
+        # update \mu and \mu +/- \sigma lines
         self.vlines.set_segments( segments )
         self.vlines.changed()
-        self.stem.\
-            set_offsets(offsets)
 
+        # update scatter plot of rel. frequencies
+        self.stem.set_offsets(offsets)
+
+        # set the legend text to the date being displayed
         self.legend.texts[0].\
             set_text( str(self.date_range[i]) )
 
+        # print the date being displayed to stdout
         print(str(self.date_range[i]))
         
         return self.stem, self.legend, self.vlines,
@@ -123,12 +137,16 @@ if __name__=='__main__':
     global data
     # load data.
     data = pd.read_pickle('./pickle/2013-12.pkl')
-    # restrict to relevant value region and apply np.log
+    
+    # restrict to relevant value region 
     tmp = data.stack()
-    tmp = np.log(tmp[(6 > tmp)&(tmp > 0.001)])
+    tmp = tmp[(6 >= tmp)&(tmp >= 0.000)]
     data = tmp.unstack(0)
     
     fig, ax = plt.subplots()
+
+    fig.set_size_inches(6, 5)
+    
     uu = UpdateDist(ax, start='2013-12-01', end='2013-12-31', delta='0.5H')
     anim = FuncAnimation(fig, uu,
                          frames=np.arange(1441),
