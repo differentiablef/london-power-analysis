@@ -1,4 +1,9 @@
 * Analysis of London Energy Usage
+** Current Status
+Experimenting with clustering daily usage profiles to highlight latent behavioral signals (cooking dinner, making breakfast, etc.. ) 
+
+A preliminary visualization of the clusters:
+[[images/expected-value-KMeans-clusters-scaled.png]]
 
 ** Directory Map
 
