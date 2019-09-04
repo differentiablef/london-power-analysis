@@ -2,7 +2,7 @@
 ** Current Status
 Experimenting with clustering daily usage profiles to highlight latent behavioral signals (cooking dinner, making breakfast, etc.. ) 
 
-A preliminary visualization of the clusters:
+A preliminary visualization of the clusters (red lines indicate the start of a new day and the green lines mark off 4-hour intervals)
 [[images/expected-value-KMeans-clusters-scaled.png]]
 
 ** Directory Map
