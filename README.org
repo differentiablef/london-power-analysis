@@ -1,6 +1,6 @@
 * Analysis of London Energy Usage
 ** Current Status
-Experimenting with clustering the daily usage profiles in an attempt to highlight latent behavioral signals (cooking dinner, making breakfast, etc.. ) 
+Experimenting with clustering the daily usage profiles in an attempt to extract latent behavioral signals (cooking dinner, making breakfast, etc.. ) 
 
 A preliminary visualization of the clusters (red lines indicate the start of a new day and the green lines mark off 6-hour intervals)
 
