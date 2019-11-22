@@ -1,0 +1,29 @@
+#+TILIE: Pres. Outline
+
+* Basic Background
+** Discuss NaNs
+** Discuss 0s
+** Thresholding of data sample
+** Selection of entries for 90x10
+
+* Data & Model Selection
+** Aggregating by Day
+** Aggregating by Month
+** Additionally Aggregated by Max/Min/Std/Mean
+** Used Combined Data 
+*** Model selection
+**** Cross-validation
+**** Parameter Tuning
+**** Kernel Selection
+** Why Scaling Didn't Work
+** Results 
+*** RBF 
+(overfiting)
+*** Linear 
+(not overfitting)
+*** Number of Models Evaluated
+
+* Conclusion
+** Room for growth
+** Results are Promising 
+
