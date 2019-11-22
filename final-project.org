@@ -5,6 +5,7 @@
 ** Discuss 0s
 ** Thresholding of data sample
 ** Selection of entries for 90x10
+** Suspected Correlations
 
 * Data & Model Selection
 ** Aggregating by Day
