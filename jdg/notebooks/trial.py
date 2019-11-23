@@ -19,10 +19,10 @@ def polyTrial(param_grid, target_names, X_train, X_test, y_train, y_test):
 	print(" .. Done")
 
 	predictions = model.predict(X_train)
-	print("Train accuracy = ", Counter(y_train-predictions)[0] / sum(Counter(y_train-predictions).values()))
+	print("Train accuracy = ", round(Counter(y_train-predictions)[0] / sum(Counter(y_train-predictions).values()),2))
 
 	predictions = model.predict(X_test)
-	print("Test accuracy  = ", Counter(y_test-predictions)[0] / sum(Counter(y_test-predictions).values()))
+	print("Test accuracy  = ", round(Counter(y_test-predictions)[0] / sum(Counter(y_test-predictions).values()),2))
 
 	print(classification_report(y_test, predictions, target_names=target_names))
 
@@ -39,10 +39,10 @@ def rbfTrial(param_grid, target_names, X_train, X_test, y_train, y_test):
 	print(" .. Done")
 
 	predictions = model.predict(X_train)
-	print("Train accuracy = ", Counter(y_train-predictions)[0] / sum(Counter(y_train-predictions).values()))
+	print("Train accuracy = ", round(Counter(y_train-predictions)[0] / sum(Counter(y_train-predictions).values()),2))
 
 	predictions = model.predict(X_test)
-	print("Test accuracy  = ", Counter(y_test-predictions)[0] / sum(Counter(y_test-predictions).values()))
+	print("Test accuracy  = ", round(Counter(y_test-predictions)[0] / sum(Counter(y_test-predictions).values()),2))
 
 	print(classification_report(y_test, predictions, target_names=target_names))
 	
@@ -60,10 +60,10 @@ def linearTrial(param_grid, target_names, X_train, X_test, y_train, y_test):
 	print(" .. Done")
 
 	predictions = model.predict(X_train)
-	print("Train accuracy = ", Counter(y_train-predictions)[0] / sum(Counter(y_train-predictions).values()))
+	print("Train accuracy = ", round(Counter(y_train-predictions)[0] / sum(Counter(y_train-predictions).values()),2))
 
 	predictions = model.predict(X_test)
-	print("Test accuracy  = ", Counter(y_test-predictions)[0] / sum(Counter(y_test-predictions).values()))
+	print("Test accuracy  = ", round(Counter(y_test-predictions)[0] / sum(Counter(y_test-predictions).values()),2))
 
 	print(classification_report(y_test, predictions, target_names=target_names))
 	
@@ -81,10 +81,10 @@ def linearSVCTrial(param_grid, target_names, X_train, X_test, y_train, y_test):
 	print(" .. Done")
 
 	predictions = model.predict(X_train)
-	print("Train accuracy = ", Counter(y_train-predictions)[0] / sum(Counter(y_train-predictions).values()))
+	print("Train accuracy = ", round(Counter(y_train-predictions)[0] / sum(Counter(y_train-predictions).values()),2))
 
 	predictions = model.predict(X_test)
-	print("Test accuracy  = ", Counter(y_test-predictions)[0] / sum(Counter(y_test-predictions).values()))
+	print("Test accuracy  = ", round(Counter(y_test-predictions)[0] / sum(Counter(y_test-predictions).values()),2))
 
 	print(classification_report(y_test, predictions, target_names=target_names))
 	
