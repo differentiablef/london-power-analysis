@@ -1,8 +1,6 @@
 * Analysis of London Energy Usage
 ** Current Status
-Experimenting with clustering the daily usage profiles in an attempt to highlight behavioral signals (cooking dinner, making breakfast, etc.. ) 
-
-
+Experimenting with using machine learning techniques to predict customer ACORN classification.
 
 ** Directory Map
 
