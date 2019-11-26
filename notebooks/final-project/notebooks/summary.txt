@@ -1,0 +1,37 @@
+AcornGroups
+-----------
+
+Creates the entireCustomers.csv and perfectCustomers.csv using month
+by month customer energy usage data contained in 'raw'.
+
+CustomerStats
+-------------
+
+Just a verification tool for entireCustomers.csv and perfectCustomers.csv.
+
+Outputs the support for each Acorn group for: 
+
+1. Perfect Customers - customers whose power usage time series covers the entire year without gaps, 
+2. Entire Customers - entire catalog of customers. 
+
+CreateDailyTotals
+-----------------
+
+Using 2013-10x90-samp.pkl, create dailyTotals.csv. The total electical energy usage per day for 2013 for each of
+the 4411 customers.
+
+ProcessDailyTotals
+------------------
+
+Generate Monthly Aggregate Data
+
+Also generate daily power usage sums for the perfect customers - perfectDailyTotals.csv.
+Monthly Aggregate Data
+1. - monthlySumEntire.csv 
+2. - monthlyMeanEntire.csv 
+3. - monthlyMaxEntire.csv 
+4. - monthlyStdEntire.csv 
+5. - monthlySumPerfect.csv 
+6. - monthlyMeanPerfect.csv 
+7. - monthlyMaxPerfect.csv 
+8. - monthlyStdPerfect.csv 
